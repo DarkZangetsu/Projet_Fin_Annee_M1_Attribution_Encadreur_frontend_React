@@ -5,12 +5,12 @@ import Login from './components/registration/Login';
 import Register from './components/registration/Register';
 import { Navigate } from "react-router-dom";
 import { Home } from "lucide-react";
-import Etudiants from "./components/Etudiants";
-import Enseignants from "./components/enseignant/Enseignants";
-import Niveaux from "./components/Niveaux";
-import MembresGroupes from "./components/MembresGroupes";
+import Groupes from "./components/groupe/Groupes";
 import Encadrements from "./components/encadrement/Encadrements";
-import Groupes from "./components/Groupes";
+import MembresGroupes from "./components/membregroupe/MembresGroupes";
+import Niveaux from "./components/niveau/Niveaux";
+import Etudiants from "./components/etudiant/Etudiants";
+import Enseignants from "./components/enseignant/Enseignants";
 
 
 function App() {
