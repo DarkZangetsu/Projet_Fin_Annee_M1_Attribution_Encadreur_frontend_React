@@ -23,7 +23,7 @@ const Dashboard = ({ children }) => {
       {/* Sidebar */}
       <aside className={`bg-gray-800 text-white w-64 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition duration-200 ease-in-out`}>
         <nav>
-          <div className="text-2xl font-semibold text-center mb-6">One</div>
+          <div className="text-2xl font-semibold text-center mb-6">MentorWise</div>
           {navItems.map((item) => (
             <Link 
               key={item.path}
