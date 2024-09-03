@@ -1,15 +1,15 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Dashboard from './components/Dashboard';
-import Login from './components/Login';
-import Register from './components/Register';
+import Dashboard from './components/dashboard/Dashboard';
+import Login from './components/registration/Login';
+import Register from './components/registration/Register';
 import { Navigate } from "react-router-dom";
 import { Home } from "lucide-react";
 import Etudiants from "./components/Etudiants";
-import Enseignants from "./components/Enseignants";
+import Enseignants from "./components/enseignant/Enseignants";
 import Niveaux from "./components/Niveaux";
 import MembresGroupes from "./components/MembresGroupes";
-import Encadrements from "./components/Encadrements";
+import Encadrements from "./components/encadrement/Encadrements";
 import Groupes from "./components/Groupes";
 
 
