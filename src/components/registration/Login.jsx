@@ -4,26 +4,37 @@ import axios from 'axios';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+
     try {
-      const apiUrl = `${process.env.REACT_APP_API_URL}/api/users/login`;
+      const apiUrl = `${process.env.REACT_APP_API_URL}/users/login`;
       const response = await axios.post(apiUrl, { email, password });
-      
-      const token = response.data.token;
-      localStorage.setItem('authToken', token);
-      
-      window.location.href = '/';
-    } catch (error) {
-      if (error.response && error.response.data) {
-        alert(`Erreur de connexion: ${error.response.data.message}`);
-      } else {
-        alert('Une erreur est survenue. Veuillez réessayer plus tard.');
+
+      const { token, userId } = response.data;
+
+      if (token && userId) {
+        // Stocker le token et l'ID utilisateur dans localStorage
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('userId', userId);
+
+        // Rediriger vers la page d'accueil
+        window.location.href = '/';
+
+        setError('Erreur : Le token ou l\'ID utilisateur n\'ont pas été reçus.');
       }
-      console.error("Erreur de connexion", error);
+    } catch (error) {
+      // Gestion des erreurs côté serveur ou requête
+      if (error.response && error.response.data) {
+        setError(error.response.data.message || 'Erreur de connexion');
+      } else {
+        setError('Une erreur est survenue. Veuillez réessayer plus tard.');
+      }
+      console.error('Erreur de connexion', error);
     }
-    
   };
 
   return (
@@ -39,7 +50,12 @@ const Login = () => {
           </div>
         </div>
         <div className="w-full md:w-1/2 p-6">
-        <h2 className="text-2xl font-bold mb-6 text-blue-600">Connexion</h2>
+          <h2 className="text-2xl font-bold mb-6 text-blue-600">Connexion</h2>
+          {error && (
+            <div className="mb-4 text-red-600">
+              {error}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="email"

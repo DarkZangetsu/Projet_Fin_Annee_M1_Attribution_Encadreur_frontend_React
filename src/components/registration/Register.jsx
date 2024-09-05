@@ -16,7 +16,7 @@ const Register = () => {
     }
 
     try {
-      const apiUrl = `${process.env.REACT_APP_API_URL}/api/users/register`;
+      const apiUrl = `${process.env.REACT_APP_API_URL}/users/register`;
       const response = await axios.post(apiUrl, { email, password, role });
       console.log(response.data);
       localStorage.setItem('token', response.data.token);
