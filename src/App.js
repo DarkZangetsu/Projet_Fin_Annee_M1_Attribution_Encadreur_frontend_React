@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Dashboard from './components/dashboard/Dashboard';
 import Login from './components/registration/Login';
 import Register from './components/registration/Register';
-import { Navigate } from "react-router-dom";
 import { Home } from "lucide-react";
 import Groupes from "./components/groupe/Groupes";
 import Encadrements from "./components/encadrement/Encadrements";
@@ -11,7 +10,7 @@ import MembresGroupes from "./components/membregroupe/MembresGroupes";
 import Niveaux from "./components/niveau/Niveaux";
 import Etudiants from "./components/etudiant/Etudiants";
 import Enseignants from "./components/enseignant/Enseignants";
-
+import PrivateRoute from "./PrivateRoute"; 
 
 function App() {
   return (
@@ -19,7 +18,14 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/*" element={<DashboardLayout />} />
+        <Route
+          path="/*"
+          element={
+            <PrivateRoute>
+              <DashboardLayout />
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </Router>
   );
@@ -28,12 +34,6 @@ function App() {
 export default App;
 
 const DashboardLayout = () => {
-  const isAuthenticated = true;
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
-  }
-
   return (
     <Dashboard>
       <Routes>
