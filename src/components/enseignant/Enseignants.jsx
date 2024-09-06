@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import {
   Add as PlusIcon,
   Edit as PencilIcon,
@@ -237,18 +236,16 @@ export default function Enseignants() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>ID Enseignant</TableCell>
-              <TableCell>Nom</TableCell>
-              <TableCell>Prénom</TableCell>
-              <TableCell>Statut</TableCell>
-              <TableCell>Spécialité</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell><strong>Nom</strong></TableCell>
+              <TableCell><strong>Prénom</strong></TableCell>
+              <TableCell><strong>Statut</strong></TableCell>
+              <TableCell><strong>Spécialité</strong></TableCell>
+              <TableCell><strong>Actions</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {enseignants.map((enseignant) => (
               <TableRow key={enseignant?.id}>
-                <TableCell>{enseignant?.id_enseignant || "N/A"}</TableCell>
                 <TableCell>{enseignant?.nom || "N/A"}</TableCell>
                 <TableCell>{enseignant?.prenom || "N/A"}</TableCell>
                 <TableCell>{enseignant?.statut || "N/A"}</TableCell>
