@@ -281,7 +281,7 @@ export default function Etudiants() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <ToastContainer />
+      <ToastContainer/>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">
           Liste des Étudiants
@@ -304,6 +304,7 @@ export default function Etudiants() {
               <TableCell><strong>Prénom</strong></TableCell>
               <TableCell><strong>Email</strong></TableCell>
               <TableCell><strong>Niveau</strong></TableCell>
+              <TableCell><strong>Année Academique</strong></TableCell>
               <TableCell><strong>Actions</strong></TableCell>
             </TableRow>
           </TableHead>
@@ -315,6 +316,7 @@ export default function Etudiants() {
                 <TableCell>{etudiant.prenom}</TableCell>
                 <TableCell>{etudiant.email}</TableCell>
                 <TableCell>{getCodeNiveau(etudiant.id_niveau)}</TableCell>
+                <TableCell>{etudiant.annee_academique}</TableCell>
                 <TableCell>
                   <IconButton
                     color="primary"
