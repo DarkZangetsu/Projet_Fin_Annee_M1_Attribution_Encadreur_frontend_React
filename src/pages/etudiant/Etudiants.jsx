@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from "react";
 import {
   Add as PlusIcon,
@@ -69,11 +71,9 @@ const EtudiantForm = ({ etudiant, onSubmit, onCancel }) => {
     e.preventDefault();
     onSubmit({
       id_utilisateur: getCurrentUserId(),
-      ...formData,    
+      ...formData,
     });
   };
-
-  
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -159,11 +159,22 @@ export default function Etudiants() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [niveaux, setNiveaux] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredEtudiants, setFilteredEtudiants] = useState("");
 
   useEffect(() => {
-    fetchEtudiants();
-    fetchNiveaux();
-  }, []);
+    const results = etudiants.filter(
+      (etudiant) =>
+        etudiant.matricule.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        etudiant.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        etudiant.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        etudiant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        etudiant.annee_academique
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
+    );
+    setFilteredEtudiants(results);
+  }, [searchTerm, etudiants]);
 
   const fetchNiveaux = async () => {
     try {
@@ -196,8 +207,13 @@ export default function Etudiants() {
     }
   };
 
+  useEffect(() => {
+    fetchEtudiants();
+    fetchNiveaux();
+  }, []);
+
   const handleCreate = async (newEtudiant) => {
-    console.log('Données envoyées:', newEtudiant);
+    console.log("Données envoyées:", newEtudiant);
     try {
       const response = await getAxiosInstance().post("/etudiants", newEtudiant);
       if (response.status === 201) {
@@ -213,16 +229,16 @@ export default function Etudiants() {
       toast.error("Impossible de créer l'étudiant");
     }
   };
-  
+
   const handleUpdate = async (updatedEtudiant) => {
-    console.log('Etudiant mis à jour:', updatedEtudiant);
+    console.log("Etudiant mis à jour:", updatedEtudiant);
     try {
       if (!updatedEtudiant.id_etudiant) {
         toast.error("L'ID de l'étudiant est manquant");
         return;
       }
       const userId = getCurrentUserId();
-  
+
       const updatedData = {
         id_utilisateur: userId,
         matricule: updatedEtudiant.matricule,
@@ -230,14 +246,14 @@ export default function Etudiants() {
         prenom: updatedEtudiant.prenom,
         email: updatedEtudiant.email,
         id_niveau: updatedEtudiant.id_niveau,
-        annee_academique: updatedEtudiant.annee_academique
+        annee_academique: updatedEtudiant.annee_academique,
       };
-  
+
       await getAxiosInstance().put(
         `/etudiants/${updatedEtudiant.id_etudiant}`,
         updatedData
       );
-      
+
       toast.success("Étudiant mis à jour avec succès");
     } catch (err) {
       console.error("Erreur lors de la mise à jour:", err);
@@ -249,7 +265,7 @@ export default function Etudiants() {
       }, 2000);
     }
   };
-    
+
   const handleDelete = async (id_etudiant) => {
     if (!id_etudiant) {
       toast.error("L'ID de l'étudiant est manquant");
@@ -269,20 +285,32 @@ export default function Etudiants() {
       }
     }
   };
-
-  if (isLoading)
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <CircularProgress />
       </div>
     );
-  if (error) return <div className="text-red-500 text-center">{error}</div>;
-  
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center">{error}</div>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <ToastContainer/>
+      <ToastContainer />
+
       <div className="flex justify-between items-center mb-6">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Recherche..."
+            className="pl-10 pr-4 py-2 border rounded-md"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
         <h1 className="text-3xl font-bold text-gray-800">
           Liste des Étudiants
         </h1>
@@ -295,21 +323,38 @@ export default function Etudiants() {
         </Button>
       </div>
 
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer
+        component={Paper}
+        style={{ maxHeight: "400px", overflow: "auto" }}
+      >
+        <Table stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell><strong>Matricule</strong></TableCell>
-              <TableCell><strong>Nom</strong></TableCell>
-              <TableCell><strong>Prénom</strong></TableCell>
-              <TableCell><strong>Email</strong></TableCell>
-              <TableCell><strong>Niveau</strong></TableCell>
-              <TableCell><strong>Année Academique</strong></TableCell>
-              <TableCell><strong>Actions</strong></TableCell>
+              <TableCell>
+                <strong>Matricule</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Nom</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Prénom</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Email</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Niveau</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Année Academique</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Actions</strong>
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {etudiants.map((etudiant) => (
+            {filteredEtudiants.map((etudiant) => (
               <TableRow key={etudiant?.id_etudiant}>
                 <TableCell>{etudiant.matricule}</TableCell>
                 <TableCell>{etudiant.nom}</TableCell>

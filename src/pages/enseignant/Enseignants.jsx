@@ -112,10 +112,22 @@ export default function Enseignants() {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredEnseignants, setFilteredEnseignants] = useState("");
 
   useEffect(() => {
     fetchEnseignants();
   }, []);
+  useEffect(() => {
+    const results = enseignants.filter(
+      (enseignant) =>
+        enseignant.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        enseignant.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        enseignant.statut.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        enseignant.specialite.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredEnseignants(results);
+  }, [searchTerm, enseignants]);
 
   const fetchEnseignants = async () => {
     try {
@@ -133,16 +145,19 @@ export default function Enseignants() {
       setIsLoading(false);
     }
   };
-  
+
   const handleCreate = async (newEnseignant) => {
     try {
-      const response = await getAxiosInstance().post("/enseignants", newEnseignant);
+      const response = await getAxiosInstance().post(
+        "/enseignants",
+        newEnseignant
+      );
       if (response.status === 201) {
         toast.success("Enseignant créé avec succès");
         setTimeout(async () => {
           await fetchEnseignants();
           setIsCreateModalOpen(false);
-        }, 2000); 
+        }, 2000);
       } else {
         throw new Error("Création échouée");
       }
@@ -150,7 +165,7 @@ export default function Enseignants() {
       toast.error("Impossible de créer l'enseignant");
     }
   };
-  
+
   const handleUpdate = async (updatedEnseignant) => {
     try {
       if (!updatedEnseignant.id_enseignant) {
@@ -158,7 +173,7 @@ export default function Enseignants() {
         return;
       }
       const userId = getCurrentUserId();
-    
+
       const updatedData = {
         nom: updatedEnseignant.nom,
         prenom: updatedEnseignant.prenom,
@@ -166,32 +181,32 @@ export default function Enseignants() {
         specialite: updatedEnseignant.specialite,
         id_utilisateur: userId,
       };
-    
+
       const response = await getAxiosInstance().put(
         `/enseignants/${updatedEnseignant.id_enseignant}`,
         updatedData
       );
-    
-      if (response.status === 200 || response.status === 204) { 
+
+      if (response.status === 200 || response.status === 204) {
         toast.success("Enseignant mis à jour avec succès");
-  
+
         setTimeout(async () => {
           await fetchEnseignants();
           setIsUpdateModalOpen(false);
-        }, 2000); 
+        }, 2000);
       } else {
         throw new Error("Mise à jour échouée");
       }
     } catch (err) {
       toast.success("Enseignant mis à jour avec succès");
-  
+
       setTimeout(async () => {
         await fetchEnseignants();
         setIsUpdateModalOpen(false);
       }, 2000);
     }
   };
-  
+
   const handleDelete = async (id_enseignant) => {
     if (!id_enseignant) {
       toast.error("L'ID de l'enseignant est manquant");
@@ -200,7 +215,9 @@ export default function Enseignants() {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cet enseignant ?")) {
       try {
         await getAxiosInstance().delete(`/enseignants/${id_enseignant}`);
-        setEnseignants(enseignants.filter((e) => e.id_enseignant !== id_enseignant));
+        setEnseignants(
+          enseignants.filter((e) => e.id_enseignant !== id_enseignant)
+        );
         toast.success("Enseignant supprimé avec succès");
       } catch (err) {
         toast.error("Impossible de supprimer l'enseignant");
@@ -208,18 +225,30 @@ export default function Enseignants() {
     }
   };
 
-  if (isLoading)
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <CircularProgress />
       </div>
     );
-  if (error) return <div className="text-red-500 text-center">{error}</div>;
+  }
 
+  if (error) {
+    return <div className="text-red-500 text-center">{error}</div>;
+  }
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer />
       <div className="flex justify-between items-center mb-6">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Recherche..."
+            className="pl-10 pr-4 py-2 border rounded-md"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
         <h1 className="text-3xl font-bold text-gray-800">
           Liste des Enseignants
         </h1>
@@ -232,20 +261,33 @@ export default function Enseignants() {
         </Button>
       </div>
 
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer
+        component={Paper}
+        style={{ maxHeight: "400px", overflow: "auto" }}
+      >
+        <Table stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell><strong>Nom</strong></TableCell>
-              <TableCell><strong>Prénom</strong></TableCell>
-              <TableCell><strong>Statut</strong></TableCell>
-              <TableCell><strong>Spécialité</strong></TableCell>
-              <TableCell><strong>Actions</strong></TableCell>
+              <TableCell>
+                <strong>Nom</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Prénom</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Statut</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Spécialité</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Actions</strong>
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {enseignants.map((enseignant) => (
-              <TableRow key={enseignant?.id}>
+            {filteredEnseignants.map((enseignant) => (
+              <TableRow key={enseignant?.id_enseignant}>
                 <TableCell>{enseignant?.nom || "N/A"}</TableCell>
                 <TableCell>{enseignant?.prenom || "N/A"}</TableCell>
                 <TableCell>{enseignant?.statut || "N/A"}</TableCell>
@@ -279,7 +321,10 @@ export default function Enseignants() {
       >
         <DialogTitle>Ajouter un nouvel enseignant</DialogTitle>
         <DialogContent>
-          <EnseignantForm onSubmit={handleCreate} onCancel={() => setIsCreateModalOpen(false)} />
+          <EnseignantForm
+            onSubmit={handleCreate}
+            onCancel={() => setIsCreateModalOpen(false)}
+          />
         </DialogContent>
       </Dialog>
 

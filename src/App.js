@@ -1,15 +1,15 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Dashboard from './components/dashboard/Dashboard';
-import Login from './components/registration/Login';
-import Register from './components/registration/Register';
+import Dashboard from './pages/dashboard/Dashboard';
+import Login from './pages/registration/Login';
+import Register from './pages/registration/Register';
 import { Home } from "lucide-react";
-import Groupes from "./components/groupe/Groupes";
-import Encadrements from "./components/encadrement/Encadrements";
-import MembresGroupes from "./components/membregroupe/MembresGroupes";
-import Niveaux from "./components/niveau/Niveaux";
-import Etudiants from "./components/etudiant/Etudiants";
-import Enseignants from "./components/enseignant/Enseignants";
+import Groupes from "./pages/groupe/Groupes";
+import Encadrements from "./pages/encadrement/Encadrements";
+import MembresGroupes from "./pages/membregroupe/MembresGroupes";
+import Niveaux from "./pages/niveau/Niveaux";
+import Etudiants from "./pages/etudiant/Etudiants";
+import Enseignants from "./pages/enseignant/Enseignants";
 import PrivateRoute from "./PrivateRoute"; 
 
 function App() {

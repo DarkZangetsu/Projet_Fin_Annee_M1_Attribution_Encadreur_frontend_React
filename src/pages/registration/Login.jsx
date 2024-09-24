@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     try {
       const apiUrl = `${process.env.REACT_APP_API_URL}/users/login`;
@@ -18,22 +18,20 @@ const Login = () => {
 
       if (token && userId) {
         // Stocker le token et l'ID utilisateur dans localStorage
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('userId', userId);
+        localStorage.setItem("authToken", token);
+        localStorage.setItem("userId", userId);
 
-        // Rediriger vers la page d'accueil
-        window.location.href = '/';
-
-        setError('Erreur : Le token ou l\'ID utilisateur n\'ont pas été reçus.');
+        window.location.href = "/";
+        alert("Connexion réussie! Vous allez être redirigé.");
       }
     } catch (error) {
       // Gestion des erreurs côté serveur ou requête
       if (error.response && error.response.data) {
-        setError(error.response.data.message || 'Erreur de connexion');
+        setError(error.response.data.message || "Erreur de connexion");
       } else {
-        setError('Une erreur est survenue. Veuillez réessayer plus tard.');
+        setError("Une erreur est survenue. Veuillez réessayer plus tard.");
       }
-      console.error('Erreur de connexion', error);
+      console.error("Erreur de connexion", error);
     }
   };
 
@@ -51,11 +49,7 @@ const Login = () => {
         </div>
         <div className="w-full md:w-1/2 p-6">
           <h2 className="text-2xl font-bold mb-6 text-blue-600">Connexion</h2>
-          {error && (
-            <div className="mb-4 text-red-600">
-              {error}
-            </div>
-          )}
+          {error && <div className="mb-4 text-red-600">{error}</div>}
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="email"
