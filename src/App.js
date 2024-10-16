@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Dashboard from './pages/dashboard/Dashboard';
-import Login from './pages/registration/Login';
+
 import Register from './pages/registration/Register';
 import { Home } from "lucide-react";
 import Groupes from "./pages/groupe/Groupes";
@@ -11,6 +11,7 @@ import Niveaux from "./pages/niveau/Niveaux";
 import Etudiants from "./pages/etudiant/Etudiants";
 import Enseignants from "./pages/enseignant/Enseignants";
 import PrivateRoute from "./PrivateRoute"; 
+import Login from "./pages/registration/Login";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
         <Route
           path="/*"
           element={

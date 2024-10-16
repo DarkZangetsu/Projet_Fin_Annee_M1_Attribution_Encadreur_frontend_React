@@ -3,6 +3,7 @@ import {
   Add as PlusIcon,
   Edit as PencilIcon,
   Delete as TrashIcon,
+  MoreVert as MoreVertIcon,
 } from "@mui/icons-material";
 import {
   Button,
@@ -23,6 +24,7 @@ import {
   FormControl,
   Select,
   TextField,
+  Menu,
 } from "@mui/material";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -32,34 +34,19 @@ const getCurrentUserId = () => {
   return localStorage.getItem("userId");
 };
 
-const MembreGroupeForm = ({ membreGroupe, onSubmit, onCancel }) => {
+const MembreGroupeForm = ({
+  membreGroupe,
+  onSubmit,
+  onCancel,
+  groupes,
+  etudiants,
+}) => {
   const [formData, setFormData] = useState(
     membreGroupe || {
       id_groupe: "",
       id_etudiant: "",
     }
   );
-
-  const [groupes, setGroupes] = useState([]);
-  const [etudiants, setEtudiants] = useState([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [groupesResponse, etudiantsResponse] = await Promise.all([
-          getAxiosInstance().get("/groupes"),
-          getAxiosInstance().get("/etudiants"),
-        ]);
-        setGroupes(groupesResponse.data);
-        setEtudiants(etudiantsResponse.data);
-      } catch (error) {
-        console.error("Erreur lors de la récupération des données:", error);
-        toast.error("Erreur lors du chargement des données");
-      }
-    };
-
-    fetchData();
-  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -76,7 +63,7 @@ const MembreGroupeForm = ({ membreGroupe, onSubmit, onCancel }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <FormControl fullWidth required>
+      <FormControl fullWidth>
         <InputLabel id="groupe-label">Groupe</InputLabel>
         <Select
           labelId="groupe-label"
@@ -92,7 +79,7 @@ const MembreGroupeForm = ({ membreGroupe, onSubmit, onCancel }) => {
         </Select>
       </FormControl>
 
-      <FormControl fullWidth required>
+      <FormControl fullWidth>
         <InputLabel id="etudiant-label">Étudiant</InputLabel>
         <Select
           labelId="etudiant-label"
@@ -122,6 +109,7 @@ const MembreGroupeForm = ({ membreGroupe, onSubmit, onCancel }) => {
 
 export default function MembresGroupes() {
   const [membresGroupe, setMembresGroupe] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [selectedMembreGroupe, setSelectedMembreGroupe] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -131,52 +119,70 @@ export default function MembresGroupes() {
   const [filteredMembresGroupe, setFilteredMembresGroupe] = useState([]);
   const [groupes, setGroupes] = useState([]);
   const [selectedGroupe, setSelectedGroupe] = useState("");
+  const [etudiants, setEtudiants] = useState([]);
+  const [niveaux, setNiveaux] = useState([]);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
 
-  const fetchGroupes = async () => {
-    try {
-      const response = await getAxiosInstance().get("/groupes");
-      setGroupes(response.data);
-    } catch (err) {
-      console.error("Erreur lors du chargement des groupes:", err);
-    }
-  };
-
-  const fetchMembresGroupe = async () => {
+  const fetchData = async () => {
     try {
       setIsLoading(true);
-      const response = await getAxiosInstance().get("/membres-groupe");
-      if (Array.isArray(response.data)) {
-        const membresGroupeWithDetails = await Promise.all(
-          response.data.map(async (membreGroupe) => {
-            const [groupeResponse, etudiantResponse] = await Promise.all([
-              getAxiosInstance().get(`/groupes/${membreGroupe.id_groupe}`),
-              getAxiosInstance().get(`/etudiants/${membreGroupe.id_etudiant}`),
-            ]);
-            return {
-              ...membreGroupe,
-              groupe: groupeResponse.data,
-              etudiant: etudiantResponse.data,
-            };
-          })
-        );
-        setMembresGroupe(membresGroupeWithDetails);
-      } else {
-        throw new Error(
-          "Les données des membres de groupe ne sont pas un tableau"
-        );
-      }
+      const [
+        membresResponse,
+        groupesResponse,
+        etudiantsResponse,
+        niveauxResponse,
+      ] = await Promise.all([
+        getAxiosInstance().get("/membres-groupe"),
+        getAxiosInstance().get("/groupes"),
+        getAxiosInstance().get("/etudiants"),
+        getAxiosInstance().get("/niveaux"),
+      ]);
+
+      const membresGroupeWithDetails = await Promise.all(
+        membresResponse.data.map(async (membreGroupe) => {
+          const [groupeResponse, etudiantResponse] = await Promise.all([
+            getAxiosInstance().get(`/groupes/${membreGroupe.id_groupe}`),
+            getAxiosInstance().get(`/etudiants/${membreGroupe.id_etudiant}`),
+          ]);
+          return {
+            ...membreGroupe,
+            groupe: groupeResponse.data,
+            etudiant: etudiantResponse.data,
+          };
+        })
+      );
+
+      setMembresGroupe(membresGroupeWithDetails);
+      setGroupes(groupesResponse.data);
+      setEtudiants(etudiantsResponse.data);
+      setNiveaux(niveauxResponse.data);
     } catch (err) {
       setError(err.message);
-      toast.error("Impossible de charger les membres de groupe");
+      toast.error("Impossible de charger les données");
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMembresGroupe();
-    fetchGroupes();
+    fetchData();
   }, []);
+
+  const handleMenuOpen = (event, groupId) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedGroupId(groupId);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedGroupId(null);
+  };
+
+  const handleDeleteMember = (id_membre_groupe) => {
+    handleDelete(id_membre_groupe);
+    handleMenuClose();
+  };
 
   useEffect(() => {
     const results = membresGroupe.filter(
@@ -199,16 +205,29 @@ export default function MembresGroupes() {
 
   const handleCreate = async (newMembreGroupe) => {
     try {
+      const groupe = groupes.find(
+        (g) => g.id_groupe === newMembreGroupe.id_groupe
+      );
+      const niveau = niveaux.find((n) => n.id_niveau === groupe.id_niveau);
+      const membresActuels = membresGroupe.filter(
+        (m) => m.id_groupe === newMembreGroupe.id_groupe
+      );
+
+      if (membresActuels.length >= niveau.taille_groupe) {
+        toast.error(
+          `Le groupe est déjà complet. Taille maximale : ${niveau.taille_groupe}`
+        );
+        return;
+      }
+
       const response = await getAxiosInstance().post(
         "/membres-groupe",
         newMembreGroupe
       );
       if (response.status === 201) {
         toast.success("Membre de groupe ajouté avec succès");
-        setTimeout(async () => {
-          await fetchMembresGroupe();
-          setIsCreateModalOpen(false);
-        }, 2000);
+        fetchData();
+        setIsCreateModalOpen(false);
       } else {
         throw new Error("Création échouée");
       }
@@ -236,7 +255,7 @@ export default function MembresGroupes() {
         updatedData
       );
       toast.success("Membre de groupe mis à jour");
-      fetchMembresGroupe();
+      fetchData();
       setIsUpdateModalOpen(false);
     } catch (err) {
       toast.error("Erreur lors de la mise à jour");
@@ -250,14 +269,20 @@ export default function MembresGroupes() {
       try {
         await getAxiosInstance().delete(`/membres-groupe/${id_membre_groupe}`);
         toast.success("Membre de groupe supprimé");
-        setTimeout(async () => {
-          await fetchMembresGroupe();
-        }, 2000);
+        fetchData();
       } catch (err) {
         toast.error("Erreur lors de la suppression");
       }
     }
   };
+
+  const groupedMembres = filteredMembresGroupe.reduce((acc, membre) => {
+    if (!acc[membre.id_groupe]) {
+      acc[membre.id_groupe] = [];
+    }
+    acc[membre.id_groupe].push(membre);
+    return acc;
+  }, {});
 
   return (
     <div className="p-4">
@@ -274,31 +299,27 @@ export default function MembresGroupes() {
       </div>
 
       <div className="mb-3 flex flex-row items-center space-x-4">
-        <div className="w-1/2">
-          <TextField
-            label="Recherche"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            fullWidth
-          />
-        </div>
+        <TextField
+          label="Recherche"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          fullWidth
+        />
 
-        <div className="w-1/2">
-          <FormControl fullWidth>
-            <InputLabel>Groupe</InputLabel>
-            <Select
-              value={selectedGroupe}
-              onChange={(e) => setSelectedGroupe(e.target.value)}
-            >
-              <MenuItem value="">Tous les groupes</MenuItem>
-              {groupes.map((groupe) => (
-                <MenuItem key={groupe.id_groupe} value={groupe.id_groupe}>
-                  {groupe.nom_groupe}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </div>
+        <FormControl fullWidth>
+          <InputLabel>Groupe</InputLabel>
+          <Select
+            value={selectedGroupe}
+            onChange={(e) => setSelectedGroupe(e.target.value)}
+          >
+            <MenuItem value="">Tous les groupes</MenuItem>
+            {groupes.map((groupe) => (
+              <MenuItem key={groupe.id_groupe} value={groupe.id_groupe}>
+                {groupe.nom_groupe}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </div>
 
       {isLoading ? (
@@ -307,46 +328,34 @@ export default function MembresGroupes() {
         </div>
       ) : error ? (
         <p className="text-red-600">{error}</p>
-      ) : filteredMembresGroupe.length === 0 ? (
+      ) : Object.keys(groupedMembres).length === 0 ? (
         <p>Aucun membre de groupe trouvé</p>
       ) : (
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Étudiant</TableCell>
                 <TableCell>Groupe</TableCell>
+                <TableCell>Étudiants</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredMembresGroupe.map((membreGroupe) => (
-                <TableRow key={membreGroupe.id_membre_groupe}>
+              {Object.entries(groupedMembres).map(([groupeId, membres]) => (
+                <TableRow key={groupeId}>
+                  <TableCell>{membres[0].groupe.nom_groupe}</TableCell>
                   <TableCell>
-                    {membreGroupe.etudiant
-                      ? `${membreGroupe.etudiant.nom} ${membreGroupe.etudiant.prenom}`
-                      : "Étudiant non défini"}
-                  </TableCell>
-                  <TableCell>
-                    {membreGroupe.groupe
-                      ? membreGroupe.groupe.nom_groupe
-                      : "Groupe non défini"}
+                    {membres.map((membre) => (
+                      <div key={membre.id_membre_groupe}>
+                        {`${membre.etudiant.nom} ${membre.etudiant.prenom}`}
+                      </div>
+                    ))}
                   </TableCell>
                   <TableCell>
                     <IconButton
-                      onClick={() => {
-                        setSelectedMembreGroupe(membreGroupe);
-                        setIsUpdateModalOpen(true);
-                      }}
+                      onClick={(event) => handleMenuOpen(event, groupeId)}
                     >
-                      <PencilIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() =>
-                        handleDelete(membreGroupe.id_membre_groupe)
-                      }
-                    >
-                      <TrashIcon />
+                      <MoreVertIcon />
                     </IconButton>
                   </TableCell>
                 </TableRow>
@@ -355,6 +364,24 @@ export default function MembresGroupes() {
           </Table>
         </TableContainer>
       )}
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        {selectedGroupId &&
+          groupedMembres[selectedGroupId].map((membre) => (
+            <div key={membre.id_membre_groupe}>
+              <MenuItem
+                onClick={() => handleDeleteMember(membre.id_membre_groupe)}
+              >
+                <TrashIcon fontSize="small" style={{ marginRight: "8px" }} />
+                Supprimer {membre.etudiant.nom} {membre.etudiant.prenom}
+              </MenuItem>
+            </div>
+          ))}
+      </Menu>
 
       <Dialog
         open={isCreateModalOpen}
@@ -365,6 +392,8 @@ export default function MembresGroupes() {
           <MembreGroupeForm
             onSubmit={handleCreate}
             onCancel={() => setIsCreateModalOpen(false)}
+            groupes={groupes}
+            etudiants={etudiants}
           />
         </DialogContent>
       </Dialog>
@@ -380,6 +409,8 @@ export default function MembresGroupes() {
               membreGroupe={selectedMembreGroupe}
               onSubmit={handleUpdate}
               onCancel={() => setIsUpdateModalOpen(false)}
+              groupes={groupes}
+              etudiants={etudiants}
             />
           )}
         </DialogContent>
