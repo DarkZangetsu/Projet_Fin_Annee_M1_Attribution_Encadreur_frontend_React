@@ -12,6 +12,7 @@ import Etudiants from "./pages/etudiant/Etudiants";
 import Enseignants from "./pages/enseignant/Enseignants";
 import PrivateRoute from "./PrivateRoute"; 
 import Login from "./pages/registration/Login";
+import GroupDisplay from "./pages/display/Display";
 
 function App() {
   return (
@@ -46,6 +47,7 @@ const DashboardLayout = () => {
         <Route path="/niveaux" element={<Niveaux />} />
         <Route path="/etudiants" element={<Etudiants />} />
         <Route path="/enseignants" element={<Enseignants />} />
+        <Route path="/display" element={<GroupDisplay />} />
       </Routes>
     </Dashboard>
   );

@@ -27,6 +27,7 @@ const Dashboard = ({ children }) => {
     { path: "/niveaux", icon: BarChart, label: "Niveaux" },
     { path: "/etudiants", icon: Users, label: "Étudiants" },
     { path: "/enseignants", icon: School, label: "Enseignants" },
+    { path: "/display", icon: School, label: "Display" },
   ];
 
   return (
