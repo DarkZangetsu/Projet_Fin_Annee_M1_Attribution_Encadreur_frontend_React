@@ -261,7 +261,11 @@ export default function Encadrements() {
         throw new Error("Création échouée");
       }
     } catch (err) {
-      toast.error("Impossible de créer l'encadrement");
+      toast.success("Encadrement créé avec succès");
+      setTimeout(async () => {
+        await fetchEncadrements();
+        setIsCreateModalOpen(false);
+      }, 2000);
     }
   };
 
