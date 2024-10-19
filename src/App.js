@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Dashboard from './pages/dashboard/Dashboard';
 
 import Register from './pages/registration/Register';
-import { Home } from "lucide-react";
 import Groupes from "./pages/groupe/Groupes";
 import Encadrements from "./pages/encadrement/Encadrements";
 import MembresGroupes from "./pages/membregroupe/MembresGroupes";
@@ -13,6 +12,7 @@ import Enseignants from "./pages/enseignant/Enseignants";
 import PrivateRoute from "./PrivateRoute"; 
 import Login from "./pages/registration/Login";
 import GroupDisplay from "./pages/display/Display";
+import HomePage from "./pages/HomePage";
 
 function App() {
   return (
@@ -40,7 +40,7 @@ const DashboardLayout = () => {
   return (
     <Dashboard>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/groupes" element={<Groupes />} />
         <Route path="/encadrements" element={<Encadrements />} />
         <Route path="/membres-groupes" element={<MembresGroupes />} />

@@ -151,8 +151,7 @@ const GroupDisplay = () => {
     nextPage,
     previousPage,
     setPageSize,
-    setGlobalFilter,
-    state: { pageIndex, pageSize, globalFilter },
+    state: { pageIndex, pageSize },
   } = useTable(
     {
       columns,
