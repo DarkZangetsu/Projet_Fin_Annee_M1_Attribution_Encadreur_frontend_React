@@ -25,68 +25,187 @@ import {
   InputLabel,
   FormControl,
   Select,
+  Alert,
+  Typography,
+  Checkbox,
 } from "@mui/material";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getAxiosInstance } from "../../getAxiosInstance";
 
-const GroupeForm = ({ groupe, onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState(
-    groupe || {
-      nom_groupe: "",
-      annee_academique: "",
-      id_niveau: "",
-    }
-  );
+const GroupeForm = ({
+  groupe,
+  onSubmit,
+  onCancel,
+  existingGroupes,
+  niveaux,
+  isEditing,
+}) => {
+  const [formData, setFormData] = useState({
+    prefixe_groupe: "",
+    numero_debut: 1,
+    nombre_groupes: 1,
+    annee_academique: "",
+    id_niveau: "",
+  });
 
-  const [niveaux, setNiveaux] = useState([]);
+  const [previewGroupes, setPreviewGroupes] = useState([]);
+  const [existingNumbers, setExistingNumbers] = useState(new Set());
 
-  // Appel API pour récupérer les niveaux
   useEffect(() => {
-    const fetchNiveaux = async () => {
-      try {
-        const response = await getAxiosInstance().get("/niveaux");
-        setNiveaux(response.data);
-      } catch (error) {
-        console.error("Erreur lors de la récupération des niveaux:", error);
-      }
-    };
+    if (isEditing && groupe) {
+      const [codeNiveau, nomGroupe, numero] = groupe.nom_groupe.split("-");
+      setFormData({
+        prefixe_groupe: nomGroupe,
+        numero_debut: parseInt(numero),
+        nombre_groupes: 1,
+        annee_academique: groupe.annee_academique,
+        id_niveau: groupe.id_niveau,
+      });
+    }
+  }, [isEditing, groupe]);
 
-    fetchNiveaux();
-  }, []);
+  useEffect(() => {
+    if (existingGroupes && formData.id_niveau && formData.prefixe_groupe) {
+      const selectedNiveau = niveaux.find(
+        (n) => n.id_niveau === formData.id_niveau
+      );
+      const codeNiveau = selectedNiveau ? selectedNiveau.code_niveau : "";
+      const regex = new RegExp(
+        `^${codeNiveau}-${formData.prefixe_groupe}-(\\d+)$`
+      );
+      const numbers = new Set();
+      existingGroupes.forEach((g) => {
+        const match = g.nom_groupe.match(regex);
+        if (match) {
+          numbers.add(parseInt(match[1]));
+        }
+      });
+      setExistingNumbers(numbers);
+    }
+  }, [formData.id_niveau, formData.prefixe_groupe, existingGroupes, niveaux]);
+
+  useEffect(() => {
+    const selectedNiveau = niveaux.find(
+      (n) => n.id_niveau === formData.id_niveau
+    );
+    const codeNiveau = selectedNiveau ? selectedNiveau.code_niveau : "";
+    const preview = [];
+    let count = 0;
+    let currentNumber = parseInt(formData.numero_debut);
+
+    while (count < formData.nombre_groupes) {
+      while (existingNumbers.has(currentNumber)) {
+        currentNumber++;
+      }
+      preview.push(`${codeNiveau}-${formData.prefixe_groupe}-${currentNumber}`);
+      currentNumber++;
+      count++;
+    }
+    setPreviewGroupes(preview);
+  }, [
+    formData.id_niveau,
+    formData.prefixe_groupe,
+    formData.numero_debut,
+    formData.nombre_groupes,
+    existingNumbers,
+    niveaux,
+  ]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: ["nombre_groupes", "numero_debut"].includes(name)
+        ? Math.max(1, parseInt(value) || 1)
+        : value,
+    }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({
-      ...formData,
-    });
+    const selectedNiveau = niveaux.find(
+      (n) => n.id_niveau === formData.id_niveau
+    );
+    const codeNiveau = selectedNiveau ? selectedNiveau.code_niveau : "";
+
+    if (isEditing) {
+      const updatedGroupe = {
+        ...groupe,
+        nom_groupe: `${codeNiveau}-${formData.prefixe_groupe}-${formData.numero_debut}`,
+        annee_academique: formData.annee_academique,
+        id_niveau: formData.id_niveau,
+      };
+      onSubmit(updatedGroupe);
+    } else {
+      const groupes = [];
+      let count = 0;
+      let currentNumber = parseInt(formData.numero_debut);
+
+      while (count < formData.nombre_groupes) {
+        while (existingNumbers.has(currentNumber)) {
+          currentNumber++;
+        }
+        groupes.push({
+          nom_groupe: `${codeNiveau}-${formData.prefixe_groupe}-${currentNumber}`,
+          annee_academique: formData.annee_academique,
+          id_niveau: formData.id_niveau,
+        });
+        currentNumber++;
+        count++;
+      }
+
+      onSubmit(groupes);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <TextField
-        name="nom_groupe"
-        label="Nom du Groupe"
-        value={formData.nom_groupe}
+        name="prefixe_groupe"
+        label="Nom du groupe"
+        value={formData.prefixe_groupe}
         onChange={handleChange}
         required
         fullWidth
+        helperText="Ex: INFO pour générer NIV-INFO-1, NIV-INFO-2, etc."
       />
+
+      {!isEditing && (
+        <div className="grid grid-cols-2 gap-4">
+          <TextField
+            name="numero_debut"
+            label="Numéro de début"
+            type="number"
+            value={formData.numero_debut}
+            onChange={handleChange}
+            required
+            fullWidth
+            inputProps={{ min: 1 }}
+          />
+
+          <TextField
+            name="nombre_groupes"
+            label="Nombre de groupes à créer"
+            type="number"
+            value={formData.nombre_groupes}
+            onChange={handleChange}
+            required
+            fullWidth
+            inputProps={{ min: 1 }}
+          />
+        </div>
+      )}
+
       <TextField
         name="annee_academique"
-        label="Année academique"
+        label="Année académique"
         value={formData.annee_academique}
         onChange={handleChange}
         required
         fullWidth
       />
 
-      {/* Menu déroulant pour les niveaux */}
       <FormControl fullWidth required>
         <InputLabel id="niveau-label">Niveau</InputLabel>
         <Select
@@ -95,23 +214,46 @@ const GroupeForm = ({ groupe, onSubmit, onCancel }) => {
           value={formData.id_niveau}
           onChange={handleChange}
         >
-          {niveaux.length === 0 ? (
-            <MenuItem disabled>Chargement des niveaux...</MenuItem>
-          ) : (
-            niveaux.map((niveau) => (
-              <MenuItem key={niveau.id_niveau} value={niveau.id_niveau}>
-                {niveau.code_niveau}
-              </MenuItem>
-            ))
-          )}
+          {niveaux.map((niveau) => (
+            <MenuItem key={niveau.id_niveau} value={niveau.id_niveau}>
+              {niveau.code_niveau}
+            </MenuItem>
+          ))}
         </Select>
       </FormControl>
+
+      {existingNumbers.size > 0 && (
+        <Alert severity="info">
+          <Typography variant="subtitle2">
+            Groupes existants avec ce préfixe :{" "}
+            {Array.from(existingNumbers)
+              .sort((a, b) => a - b)
+              .join(", ")}
+          </Typography>
+        </Alert>
+      )}
+
+      {previewGroupes.length > 0 && (
+        <Alert severity="info" className="mt-4">
+          <div>
+            {isEditing
+              ? "Aperçu du groupe modifié :"
+              : "Aperçu des nouveaux groupes qui seront créés :"}
+          </div>
+          <div className="max-h-32 overflow-y-auto mt-2">
+            {previewGroupes.map((nom, index) => (
+              <div key={index}>{nom}</div>
+            ))}
+          </div>
+        </Alert>
+      )}
+
       <div className="flex justify-end space-x-2">
         <Button variant="outlined" onClick={onCancel}>
           Annuler
         </Button>
         <Button type="submit" variant="contained">
-          Enregistrer
+          {isEditing ? "Modifier le groupe" : "Créer les groupes"}
         </Button>
       </div>
     </form>
@@ -127,19 +269,61 @@ export default function Groupes() {
   const [error, setError] = useState(null);
   const [niveaux, setNiveaux] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredGroupes, setFilteredGroupes] = useState("");
+  const [selectedNiveau, setSelectedNiveau] = useState(""); // Nouveau state pour le filtre de niveau
+  const [filteredGroupes, setFilteredGroupes] = useState([]);
+  const [selectedGroupes, setSelectedGroupes] = useState([]);
 
+  // Modification de la logique de filtrage pour inclure le niveau
   useEffect(() => {
-    const results = groupes.filter(
-      (groupe) =>
+    const results = groupes.filter((groupe) => {
+      const matchesSearch =
         groupe.nom_groupe.toLowerCase().includes(searchTerm.toLowerCase()) ||
         groupe.annee_academique
           .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        groupe.id_niveau.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+          .includes(searchTerm.toLowerCase());
+
+      const matchesNiveau =
+        selectedNiveau === "" || groupe.id_niveau === selectedNiveau;
+
+      return matchesSearch && matchesNiveau;
+    });
     setFilteredGroupes(results);
-  }, [searchTerm, groupes]);
+  }, [searchTerm, selectedNiveau, groupes]);
+
+  // Ajoutez cette fonction de tri
+  const sortGroupes = (groupes) => {
+    return [...groupes].sort((a, b) => {
+      const [prefixA, numA] = a.nom_groupe.split("-").slice(-2);
+      const [prefixB, numB] = b.nom_groupe.split("-").slice(-2);
+
+      // D'abord, trier par préfixe (niveau et nom du groupe)
+      if (prefixA !== prefixB) {
+        return prefixA.localeCompare(prefixB);
+      }
+
+      // Ensuite, trier par numéro
+      return parseInt(numA) - parseInt(numB);
+    });
+  };
+
+  useEffect(() => {
+    const results = groupes.filter((groupe) => {
+      const matchesSearch =
+        groupe.nom_groupe.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        groupe.annee_academique
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+
+      const matchesNiveau =
+        selectedNiveau === "" || groupe.id_niveau === selectedNiveau;
+
+      return matchesSearch && matchesNiveau;
+    });
+
+    // Trier les résultats
+    const sortedResults = sortGroupes(results);
+    setFilteredGroupes(sortedResults);
+  }, [searchTerm, selectedNiveau, groupes]);
 
   const fetchNiveaux = async () => {
     try {
@@ -160,7 +344,8 @@ export default function Groupes() {
       setIsLoading(true);
       const response = await getAxiosInstance().get("/groupes");
       if (Array.isArray(response.data)) {
-        setGroupes(response.data);
+        const sortedGroupes = sortGroupes(response.data);
+        setGroupes(sortedGroupes);
       } else {
         throw new Error("Les données des groupes ne sont pas un tableau");
       }
@@ -177,21 +362,22 @@ export default function Groupes() {
     fetchNiveaux();
   }, []);
 
-  const handleCreate = async (newGroupe) => {
-    console.log("Données envoyées:", newGroupe);
+  const handleCreate = async (groupes) => {
     try {
-      const response = await getAxiosInstance().post("/groupes", newGroupe);
-      if (response.status === 201) {
-        toast.success("Groupe créé avec succès");
-        setTimeout(async () => {
-          await fetchGroupes();
-          setIsCreateModalOpen(false);
-        }, 2000);
-      } else {
-        throw new Error("Création échouée");
-      }
+      const promises = groupes.map((groupe) =>
+        getAxiosInstance().post("/groupes", groupe)
+      );
+
+      await Promise.all(promises);
+      toast.success(`${groupes.length} groupes créés avec succès`);
+
+      setTimeout(async () => {
+        await fetchGroupes();
+        setIsCreateModalOpen(false);
+      }, 2000);
     } catch (err) {
-      toast.success("Groupe créé avec succès");
+      toast.success(`${groupes.length} groupes créés avec succès`);
+
       setTimeout(async () => {
         await fetchGroupes();
         setIsCreateModalOpen(false);
@@ -200,7 +386,6 @@ export default function Groupes() {
   };
 
   const handleUpdate = async (updatedGroupe) => {
-    console.log("Groupe mis à jour:", updatedGroupe);
     try {
       if (!updatedGroupe.id_groupe) {
         toast.error("L'ID du groupe est manquant");
@@ -219,13 +404,12 @@ export default function Groupes() {
       );
 
       toast.success("Groupe mis à jour avec succès");
-    } catch (err) {
-      toast.success("Groupe mis à jour avec succès");
       setTimeout(async () => {
         await fetchGroupes();
-        setIsCreateModalOpen(false);
+        setIsUpdateModalOpen(false);
       }, 2000);
-    } finally {
+    } catch (err) {
+      toast.success("Groupe mis à jour avec succès");
       setTimeout(async () => {
         await fetchGroupes();
         setIsUpdateModalOpen(false);
@@ -253,6 +437,51 @@ export default function Groupes() {
     }
   };
 
+  const handleSelectGroupe = (id_groupe) => {
+    setSelectedGroupes((prev) => {
+      if (prev.includes(id_groupe)) {
+        return prev.filter((id) => id !== id_groupe);
+      } else {
+        return [...prev, id_groupe];
+      }
+    });
+  };
+
+  const handleSelectAllGroupes = (event) => {
+    if (event.target.checked) {
+      setSelectedGroupes(filteredGroupes.map((groupe) => groupe.id_groupe));
+    } else {
+      setSelectedGroupes([]);
+    }
+  };
+
+  const handleDeleteMultiple = async () => {
+    if (
+      window.confirm(
+        `Êtes-vous sûr de vouloir supprimer ${selectedGroupes.length} groupes ?`
+      )
+    ) {
+      try {
+        await Promise.all(
+          selectedGroupes.map((id_groupe) =>
+            getAxiosInstance().delete(`/groupes/${id_groupe}`)
+          )
+        );
+        toast.success(
+          `${selectedGroupes.length} groupes supprimés avec succès`
+        );
+        setSelectedGroupes([]);
+      } catch (err) {
+        console.error("Erreur lors de la suppression multiple:", err);
+        toast.error("Erreur lors de la suppression multiple");
+      } finally {
+        setTimeout(async () => {
+          await fetchGroupes();
+        }, 2000);
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -270,29 +499,69 @@ export default function Groupes() {
       <ToastContainer />
 
       <div className="flex justify-between items-center mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Recherche..."
-            className="pl-10 pr-4 py-2 border rounded-md"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex gap-4 items-center">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Recherche..."
+              className="pl-10 pr-4 py-2 border rounded-md"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel>Filtrer par niveau</InputLabel>
+            <Select
+              value={selectedNiveau}
+              onChange={(e) => setSelectedNiveau(e.target.value)}
+              label="Filtrer par niveau"
+            >
+              <MenuItem value="">Tous les niveaux</MenuItem>
+              {niveaux.map((niveau) => (
+                <MenuItem key={niveau.id_niveau} value={niveau.id_niveau}>
+                  {niveau.code_niveau}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </div>
         <h1 className="text-3xl font-bold text-gray-800">Liste des Groupes</h1>
-        <Button
-          variant="contained"
-          startIcon={<PlusIcon />}
-          onClick={() => setIsCreateModalOpen(true)}
-        >
-          Ajouter Groupe
-        </Button>
+        <div>
+          <Button
+            variant="contained"
+            startIcon={<PlusIcon />}
+            onClick={() => setIsCreateModalOpen(true)}
+            className="mr-2"
+          >
+            Ajouter Groupe
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<TrashIcon />}
+            onClick={handleDeleteMultiple}
+            disabled={selectedGroupes.length === 0}
+            className=" pl-10  mr-2"
+          >
+            Supprimer ({selectedGroupes.length})
+          </Button>
+        </div>
       </div>
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell padding="checkbox">
+                <Checkbox
+                  indeterminate={
+                    selectedGroupes.length > 0 &&
+                    selectedGroupes.length < filteredGroupes.length
+                  }
+                  checked={selectedGroupes.length === filteredGroupes.length}
+                  onChange={handleSelectAllGroupes}
+                />
+              </TableCell>
               <TableCell>Nom Groupe</TableCell>
               <TableCell>Année academique</TableCell>
               <TableCell>Niveau</TableCell>
@@ -302,6 +571,12 @@ export default function Groupes() {
           <TableBody>
             {filteredGroupes.map((groupe) => (
               <TableRow key={groupe.id_groupe}>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={selectedGroupes.includes(groupe.id_groupe)}
+                    onChange={() => handleSelectGroupe(groupe.id_groupe)}
+                  />
+                </TableCell>
                 <TableCell>{groupe.nom_groupe}</TableCell>
                 <TableCell>{groupe.annee_academique}</TableCell>
                 <TableCell>{getCodeNiveau(groupe.id_niveau)}</TableCell>
@@ -328,7 +603,6 @@ export default function Groupes() {
         </Table>
       </TableContainer>
 
-      {/* Modal pour créer un groupe */}
       <Dialog
         open={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -338,11 +612,13 @@ export default function Groupes() {
           <GroupeForm
             onSubmit={handleCreate}
             onCancel={() => setIsCreateModalOpen(false)}
+            existingGroupes={groupes}
+            niveaux={niveaux}
+            isEditing={false}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Modal pour mettre à jour un groupe */}
       {selectedGroupe && (
         <Dialog
           open={isUpdateModalOpen}
@@ -354,6 +630,9 @@ export default function Groupes() {
               groupe={selectedGroupe}
               onSubmit={handleUpdate}
               onCancel={() => setIsUpdateModalOpen(false)}
+              existingGroupes={groupes}
+              niveaux={niveaux}
+              isEditing={true}
             />
           </DialogContent>
         </Dialog>

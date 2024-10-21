@@ -4,6 +4,7 @@ import {
   usePagination,
   useGlobalFilter,
   useExpanded,
+  useSortBy,
 } from "react-table";
 import { getAxiosInstance } from "../../getAxiosInstance";
 import jsPDF from "jspdf";
@@ -27,9 +28,9 @@ const GroupDisplay = () => {
     anneeUniversitaire: "",
     sansEncadreur: false,
     sansMembre: false,
-    seulementGroupesNormaux: false, // Nouveau filtre
-    minEtudiants: "", // Nombre minimum d'étudiants
-    maxEtudiants: "", // Nombre maximum d'étudiants
+    seulementGroupesNormaux: false,
+    minEtudiants: "",
+    maxEtudiants: "",
   });
 
   useEffect(() => {
@@ -47,6 +48,24 @@ const GroupDisplay = () => {
 
     fetchGroups();
   }, []);
+
+  // Fonction pour extraire le numéro du groupe
+  const extractGroupNumber = (groupName) => {
+    const match = groupName.match(/\d+$/);
+    return match ? parseInt(match[0]) : 0;
+  };
+
+  // Tri des groupes par niveau, puis par numéro incrémenté
+  const sortedGroups = useMemo(() => {
+    return [...groups].sort((a, b) => {
+      if (a.niveau !== b.niveau) {
+        return a.niveau.localeCompare(b.niveau);
+      }
+      return (
+        extractGroupNumber(a.nom_groupe) - extractGroupNumber(b.nom_groupe)
+      );
+    });
+  }, [groups]);
 
   // Récupérer les valeurs uniques pour les filtres
   const uniqueNiveaux = useMemo(
@@ -108,7 +127,7 @@ const GroupDisplay = () => {
   );
 
   const filteredData = useMemo(() => {
-    return groups.filter((group) => {
+    return sortedGroups.filter((group) => {
       const nbEtudiants = group.etudiants?.length || 0;
 
       // Vérification des groupes normaux
@@ -134,9 +153,9 @@ const GroupDisplay = () => {
           : true)
       );
     });
-  }, [groups, filters]);
+  }, [sortedGroups, filters]);
 
-  // Configuration de la table et pagination (reste inchangée)...
+  // Configuration de la table avec useSortBy
   const {
     getTableProps,
     getTableBodyProps,
@@ -156,9 +175,14 @@ const GroupDisplay = () => {
     {
       columns,
       data: filteredData,
-      initialState: { pageIndex: 0, pageSize: 10 },
+      initialState: {
+        pageIndex: 0,
+        pageSize: 10,
+        sortBy: [{ id: "nom_groupe", desc: false }],
+      },
     },
     useGlobalFilter,
+    useSortBy,
     useExpanded,
     usePagination
   );
@@ -378,10 +402,19 @@ const GroupDisplay = () => {
                   <tr {...headerGroup.getHeaderGroupProps()}>
                     {headerGroup.headers.map((column) => (
                       <th
-                        {...column.getHeaderProps()}
+                        {...column.getHeaderProps(
+                          column.getSortByToggleProps()
+                        )}
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
                         {column.render("Header")}
+                        <span>
+                          {column.isSorted
+                            ? column.isSortedDesc
+                              ? " 🔽"
+                              : " 🔼"
+                            : ""}
+                        </span>
                       </th>
                     ))}
                   </tr>
@@ -397,13 +430,9 @@ const GroupDisplay = () => {
                     <tr
                       {...row.getRowProps()}
                       className={`
-                        ${!row.original.enseignant ? "bg-yellow-100" : ""}
-                        ${
-                          row.original.etudiants?.length === 0
-                            ? "bg-red-100"
-                            : ""
-                        }
-                      `}
+                ${!row.original.enseignant ? "bg-yellow-100" : ""}
+                ${row.original.etudiants?.length === 0 ? "bg-red-100" : ""}
+              `}
                     >
                       {row.cells.map((cell) => {
                         return (
