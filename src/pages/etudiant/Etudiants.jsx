@@ -302,6 +302,9 @@ export default function Etudiants() {
         >
           Ajouter un étudiant
         </Button>
+        <h1 className="text-3xl font-bold text-gray-800">
+          Liste des Etudiants
+        </h1>
         <Button
           variant="outlined"
           startIcon={<PdfIcon />}
